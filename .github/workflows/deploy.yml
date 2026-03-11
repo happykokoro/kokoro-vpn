@@ -1,0 +1,47 @@
+name: Deploy VPN
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform action"
+        required: true
+        default: "apply"
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+env:
+  TF_VAR_do_token: ${{ secrets.DO_TOKEN }}
+  TF_VAR_ssh_key_fingerprint: ${{ secrets.SSH_KEY_FINGERPRINT }}
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+        if: inputs.action != 'destroy'
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+        if: inputs.action == 'apply'
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
+        if: inputs.action == 'destroy'

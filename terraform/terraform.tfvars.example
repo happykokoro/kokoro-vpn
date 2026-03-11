@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars and fill in your values
+do_token             = "dop_v1_xxxxxxxxxxxx"
+ssh_key_fingerprint  = "aa:bb:cc:dd:ee:ff:00:11:22:33:44:55:66:77:88:99"
+region               = "sgp1"    # Singapore (closest to you)
+size                 = "s-1vcpu-1gb"  # $6/mo — plenty for VPN

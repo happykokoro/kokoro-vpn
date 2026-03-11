@@ -1,0 +1,10 @@
+.env
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+*.pem
+*.key
+*.conf
+!docker-compose.yml
+!Caddyfile

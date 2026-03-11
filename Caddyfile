@@ -1,0 +1,7 @@
+# Reverse proxy for WireGuard web UI with automatic HTTPS
+# Uncomment the caddy service in docker-compose.yml and set DOMAIN in .env
+
+{$DOMAIN:vpn.example.org} {
+    reverse_proxy wg-easy:51821
+    tls {$EMAIL:admin@example.org}
+}
