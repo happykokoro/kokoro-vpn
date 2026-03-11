@@ -1,0 +1,20 @@
+# Demo-only deployment: static website, no VPN backend
+# Usage: docker compose -f docker-compose.demo.yml up -d
+
+services:
+  demo-site:
+    image: caddy:2-alpine
+    container_name: kokoro-vpn-demo
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./website/dist:/srv:ro
+      - ./Caddyfile.demo:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+  caddy-config:

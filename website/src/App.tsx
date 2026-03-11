@@ -1,9 +1,12 @@
 import { Landing } from "./pages/Landing";
 import { Sandbox } from "./pages/Sandbox";
+import { DemoApp } from "./pages/DemoApp";
 import { useState } from "react";
 
+type Page = "landing" | "sandbox" | "demo";
+
 function App() {
-  const [page, setPage] = useState<"landing" | "sandbox">("landing");
+  const [page, setPage] = useState<Page>("landing");
 
   return (
     <div className="min-h-screen">
@@ -24,6 +27,12 @@ function App() {
               Home
             </button>
             <button
+              onClick={() => setPage("demo")}
+              className={`text-sm ${page === "demo" ? "text-white" : "text-gray-400 hover:text-white"} transition-colors`}
+            >
+              Live Demo
+            </button>
+            <button
               onClick={() => setPage("sandbox")}
               className={`text-sm px-4 py-1.5 rounded-full ${
                 page === "sandbox"
@@ -38,7 +47,14 @@ function App() {
       </nav>
 
       <main className="pt-14">
-        {page === "landing" ? <Landing onTrySandbox={() => setPage("sandbox")} /> : <Sandbox />}
+        {page === "landing" && (
+          <Landing
+            onTrySandbox={() => setPage("sandbox")}
+            onTryDemo={() => setPage("demo")}
+          />
+        )}
+        {page === "sandbox" && <Sandbox />}
+        {page === "demo" && <DemoApp />}
       </main>
 
       {/* Footer */}

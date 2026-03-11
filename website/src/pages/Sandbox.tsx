@@ -1,65 +1,41 @@
-import { useState } from "react";
-import { Shield, Clock, Gauge, Download, Copy, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Shield, Clock, Gauge, Download, Copy, Check, Info } from "lucide-react";
 
-interface GuestResponse {
-  token: string;
-  config: string;
-  expires_at: string;
-  bandwidth_limit_mb: number;
-}
+const DEMO_CONFIG = `[Interface]
+# DEMO CONFIG - NOT A REAL VPN
+PrivateKey = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+Address = 10.8.0.42/32
+DNS = 1.1.1.1, 9.9.9.9
+
+[Peer]
+PublicKey = BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=
+Endpoint = demo.kokoro.org:51820
+AllowedIPs = 0.0.0.0/0, ::/0
+PersistentKeepalive = 25`;
 
 export function Sandbox() {
-  const [guestData, setGuestData] = useState<GuestResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [started, setStarted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(30 * 60);
+  const [bandwidthUsed, setBandwidthUsed] = useState(0);
 
-  const sandboxUrl =
-    localStorage.getItem("kokoro-vpn-sandbox") || "";
+  useEffect(() => {
+    if (!started) return;
+    const interval = setInterval(() => {
+      setTimeLeft((t) => Math.max(0, t - 1));
+      setBandwidthUsed((b) => Math.min(100, b + Math.random() * 0.3));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [started]);
 
-  const createGuest = async () => {
-    if (!sandboxUrl) {
-      setError("Sandbox server URL not configured");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch(`${sandboxUrl}/api/sandbox/guest`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Failed to create guest account");
-      }
-
-      const data: GuestResponse = await res.json();
-      setGuestData(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const downloadConfig = () => {
-    if (!guestData) return;
-    const blob = new Blob([guestData.config], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "kokoro-vpn-guest.conf";
-    a.click();
-    URL.revokeObjectURL(url);
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
   const copyConfig = async () => {
-    if (!guestData) return;
-    await navigator.clipboard.writeText(guestData.config);
+    await navigator.clipboard.writeText(DEMO_CONFIG);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -71,11 +47,20 @@ export function Sandbox() {
           <Shield className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
           <h1 className="text-3xl font-bold mb-2">Try Kokoro VPN</h1>
           <p className="text-gray-400">
-            Get a free guest account to test the VPN. No signup required.
+            See how the guest sandbox experience works. No server required.
           </p>
         </div>
 
-        {!guestData ? (
+        <div className="mb-6 flex items-start gap-2 p-3 bg-indigo-900/30 border border-indigo-700/50 rounded-xl">
+          <Info className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
+          <p className="text-xs text-indigo-300">
+            <span className="font-medium">Demo Mode</span> — This shows a
+            simulated guest experience. The config below is fake and will not
+            create a real VPN tunnel.
+          </p>
+        </div>
+
+        {!started ? (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
@@ -90,41 +75,32 @@ export function Sandbox() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">
-                Sandbox Server URL
-              </label>
-              <input
-                type="url"
-                value={sandboxUrl}
-                onChange={(e) => {
-                  localStorage.setItem("kokoro-vpn-sandbox", e.target.value);
-                }}
-                placeholder="https://sandbox.vpn.example.org"
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
-              />
-            </div>
-
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-
             <button
-              onClick={createGuest}
-              disabled={loading}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 rounded-xl font-medium transition-colors"
+              onClick={() => setStarted(true)}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-medium transition-colors"
             >
-              {loading ? "Creating..." : "Get Guest Access"}
+              Start Demo Session
             </button>
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="p-4 bg-green-900/20 border border-green-700 rounded-xl">
-              <p className="text-green-400 font-medium mb-1">
-                Guest account created!
-              </p>
-              <p className="text-sm text-gray-400">
-                Expires: {guestData.expires_at} | Limit:{" "}
-                {guestData.bandwidth_limit_mb} MB
-              </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                <Clock className="w-5 h-5 text-yellow-400 mb-1" />
+                <p className="text-lg font-bold font-mono">{formatTime(timeLeft)}</p>
+                <p className="text-xs text-gray-500">Time remaining</p>
+              </div>
+              <div className="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                <Gauge className="w-5 h-5 text-blue-400 mb-1" />
+                <p className="text-lg font-bold">{bandwidthUsed.toFixed(1)} MB</p>
+                <p className="text-xs text-gray-500">of 100 MB used</p>
+                <div className="mt-2 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 rounded-full transition-all"
+                    style={{ width: `${bandwidthUsed}%` }}
+                  />
+                </div>
+              </div>
             </div>
 
             <div>
@@ -132,13 +108,21 @@ export function Sandbox() {
                 WireGuard Config
               </h3>
               <pre className="bg-gray-900 border border-gray-700 rounded-xl p-4 text-xs text-gray-300 overflow-x-auto whitespace-pre-wrap">
-                {guestData.config}
+                {DEMO_CONFIG}
               </pre>
             </div>
 
             <div className="flex gap-3">
               <button
-                onClick={downloadConfig}
+                onClick={() => {
+                  const blob = new Blob([DEMO_CONFIG], { type: "text/plain" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "kokoro-vpn-demo.conf";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
                 className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
               >
                 <Download className="w-4 h-4" />
@@ -148,20 +132,17 @@ export function Sandbox() {
                 onClick={copyConfig}
                 className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
               >
-                {copied ? (
-                  <Check className="w-4 h-4 text-green-400" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
+                {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
 
             <div className="text-sm text-gray-400 space-y-2">
-              <p className="font-medium text-white">How to connect:</p>
+              <p className="font-medium text-white">How it works in production:</p>
               <ol className="list-decimal list-inside space-y-1">
-                <li>Download the WireGuard app for your device</li>
-                <li>Import the config file above</li>
-                <li>Activate the tunnel</li>
+                <li>Deploy your own Kokoro VPN server</li>
+                <li>Guests visit the sandbox page and get a real config</li>
+                <li>Import into WireGuard app and connect</li>
+                <li>Session auto-expires after the time limit</li>
               </ol>
             </div>
           </div>

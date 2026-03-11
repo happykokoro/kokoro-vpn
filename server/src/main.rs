@@ -9,7 +9,8 @@ mod wireguard;
 use axum::routing::{delete, get, post};
 use axum::Router;
 use sqlx::SqlitePool;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowOrigin, CorsLayer};
+use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::trace::TraceLayer;
 
 use crate::auth::AuthState;
@@ -84,7 +85,8 @@ async fn main() {
         // Server profiles
         .route("/api/servers", get(list_servers))
         // Middleware
-        .layer(CorsLayer::permissive())
+        .layer(RequestBodyLimitLayer::new(1024 * 1024)) // 1MB max request body
+        .layer(build_cors(&config))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
@@ -93,6 +95,22 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
+}
+
+fn build_cors(config: &AppConfig) -> CorsLayer {
+    // In production, restrict to known origins; fall back to permissive for dev
+    if let Ok(origins) = std::env::var("CORS_ORIGINS") {
+        let origins: Vec<_> = origins
+            .split(',')
+            .filter_map(|o| o.trim().parse().ok())
+            .collect();
+        CorsLayer::new()
+            .allow_origin(AllowOrigin::list(origins))
+            .allow_methods(tower_http::cors::Any)
+            .allow_headers(tower_http::cors::Any)
+    } else {
+        CorsLayer::permissive()
+    }
 }
 
 async fn seed_admin(db: &SqlitePool, config: &AppConfig) {

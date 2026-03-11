@@ -1,0 +1,14 @@
+# Demo site Caddyfile — static SPA only
+# Replace :80 with your domain for auto-HTTPS (e.g., demo.kokoro.org)
+
+:80 {
+	root * /srv
+	file_server
+	try_files {path} /index.html
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+}

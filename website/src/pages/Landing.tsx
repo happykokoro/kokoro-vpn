@@ -12,9 +12,10 @@ import {
 
 interface LandingProps {
   onTrySandbox: () => void;
+  onTryDemo: () => void;
 }
 
-export function Landing({ onTrySandbox }: LandingProps) {
+export function Landing({ onTrySandbox, onTryDemo }: LandingProps) {
   return (
     <div>
       {/* Hero */}
@@ -32,12 +33,18 @@ export function Landing({ onTrySandbox }: LandingProps) {
             Self-hosted WireGuard VPN with a beautiful desktop app. Deploy in
             minutes, connect from anywhere.
           </p>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-4 flex-wrap">
             <button
-              onClick={onTrySandbox}
+              onClick={onTryDemo}
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-medium transition-colors"
             >
-              Try It Free
+              Live Demo
+            </button>
+            <button
+              onClick={onTrySandbox}
+              className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-medium transition-colors"
+            >
+              Try Sandbox
             </button>
             <a
               href="https://github.com/happykokoro/kokoro-vpn"
@@ -165,12 +172,12 @@ export function Landing({ onTrySandbox }: LandingProps) {
         <p className="text-gray-400 mb-8">
           Deploy your own VPN in under 5 minutes.
         </p>
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-4 flex-wrap">
           <button
-            onClick={onTrySandbox}
+            onClick={onTryDemo}
             className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-medium transition-colors"
           >
-            Try the Sandbox
+            Try the Demo
           </button>
           <a
             href="https://github.com/happykokoro/kokoro-vpn"
