@@ -1,10 +1,35 @@
+# Environment
 .env
+
+# Terraform
 *.tfstate
 *.tfstate.backup
 .terraform/
 .terraform.lock.hcl
+
+# Secrets
 *.pem
 *.key
 *.conf
 !docker-compose.yml
 !Caddyfile
+!tauri.conf.json
+
+# Rust
+target/
+
+# Node
+node_modules/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cargo config (local only)
+server/.cargo/
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
